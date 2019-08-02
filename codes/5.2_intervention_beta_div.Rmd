@@ -1,0 +1,87 @@
+---
+title: "5_2_intervention_beta_div"
+author: "Ran An"
+date: "`r Sys.Date()`"
+output: bookdown::gitbook
+site: bookdown::bookdown_site
+---
+
+##Beta diversity
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+library(microbiome) # data analysis and visualisation
+library(phyloseq) # also the basis of data object. Data analysis and visualisation
+library(microbiomeutilities) # some utility tools 
+library(RColorBrewer) # nice color options
+library(ggpubr) # publication quality figures, based on ggplot2
+library(DT) # interactive tables in html and markdown
+library(data.table) # alternative to data.frame
+library(dplyr) # data handling  
+library(vegan) # very useful for many ecological analysis
+library(cowplot) # for compared plot
+library(RVAideMemoire) # for pair wise comparison
+```
+
+Data preparation
+```{r}
+ps_GH002_rm <- readRDS("./phyobjects/ps_GH002_rm.rds") #read in the phyloseq object without mocks
+```
+
+Transformation and distance preparation
+```{r}
+ps_GH002_rm.rel <- transform(ps_GH002_rm, "relative.abundance")
+
+dist.rel.uf <- phyloseq::distance(ps_GH002_rm.rel, method = "unifrac") ## Unifrac
+dist.rel.wuf <- phyloseq::distance(ps_GH002_rm.rel, method = "wunifrac") ## Weighted Unifrac
+dist.rel.bc <- distance(ps_GH002_rm.rel, method = "bray") ## Bray-Curtis
+```
+
+
+```{r}
+#MDS + Weighted Unifrac
+ord_rel.wuf <- ordinate(ps_GH002_rm.rel, method = "MDS", distance = dist.rel.wuf)
+p3 <- plot_ordination(ps_GH002_rm.rel, ord_rel.wuf, shape = "Time")
+p3 <- p3 + scale_shape_manual(values= c(19,24,15,3,7,8,16,12))
+p3 <- p3 + theme_bw() + ggtitle("PCoA + Weighted Unifrac") ## add title and plain background
+p3 <- p3 + facet_wrap( ~ pair_group)
+
+#MDS + unWeighted Unifrac
+ord_rel.uf <- ordinate(ps_GH002_rm.rel, method = "MDS", distance = dist.rel.uf)
+p4 <- plot_ordination(ps_GH002_rm.rel, ord_rel.uf, shape = "Time")
+p4 <- p4 + scale_shape_manual(values= c(19,24,15,3,7,8,16,12))
+p4 <- p4 + theme_bw() + ggtitle("PCoA + unWeighted Unifrac") ## add title and plain background
+p4 <- p4 + facet_wrap( ~ pair_group)
+
+fig<-plot_grid(p3, p4, p1, p2,labels=c("A", "B", "C", "D"), ncol = 2, nrow = 2)
+fig
+```
+
+## Permanova
+Adonis-weighted
+```{r}
+metadf <- data.frame(sample_data(ps_GH002_rm.rel))
+
+unifrac.dist <- UniFrac(ps_GH002_rm.rel, 
+                        weighted = TRUE, 
+                        normalized = TRUE,  
+                        parallel = FALSE, 
+                        fast = TRUE)
+
+permanova <- pairwise.perm.manova(unifrac.dist, metadf$group, nperm = 999, progress = FALSE, p.method = "fdr")
+permanova
+```
+
+Adonis-unweighted
+```{r}
+metadf <- data.frame(sample_data(ps_GH002_rm.rel))
+
+unifrac.dist <- UniFrac(ps_GH002_rm.rel, 
+                        weighted = FALSE, 
+                        normalized = TRUE,  
+                        parallel = FALSE, 
+                        fast = TRUE)
+
+permanova <- pairwise.perm.manova(unifrac.dist, metadf$group, nperm = 999, progress = FALSE, p.method = "fdr")
+permanova
+```
+
+

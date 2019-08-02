@@ -1,0 +1,120 @@
+
+---
+title: "5.1 intervention effect-alpha diversity"
+author: "Ran An"
+date: "`r Sys.Date()`"
+output: bookdown::gitbook
+site: bookdown::bookdown_site
+---
+#Intervention effect
+##Alpha diversity
+```{r}
+alpha.diversity <- read.csv(file="./tables/alpha_diversity.csv",check.names = FALSE, row.names = 1,stringsAsFactors = FALSE)
+
+pre <- alpha.diversity[alpha.diversity$Time == "pre",][,c("Description","subject")]
+post <- alpha.diversity[alpha.diversity$Time == "post",][,c("Description","subject")]
+
+matching_subjects <- Reduce(intersect, list(pre$subject,post$subject))#get sample names
+
+resulting_samples <- as.character(subset(alpha.diversity, subject %in% matching_subjects)[,"Description"])
+resulting_alpha <- subset(alpha.diversity, subject %in% matching_subjects)
+
+```
+
+Take out biological replicates
+```{r}
+resulting_alpha <- subset(resulting_alpha, Description != "GH002.012.02.lib1.b69")
+resulting_alpha <- subset(resulting_alpha, Description != "GH002.012.02.lib2.b69")
+resulting_alpha <- subset(resulting_alpha, Description != "GH002.012.02.lib3.b69")
+resulting_alpha <- subset(resulting_alpha, Description != "GH002.064.02.lib2.b70")
+resulting_alpha <- subset(resulting_alpha, Description != "GH002.064.02.lib1.b70")
+resulting_alpha <- subset(resulting_alpha, Description != "GH002.064.02.lib3.b70")
+resulting_alpha <- subset(resulting_alpha, Description != "GH002.064.02.lib2.b42")
+resulting_alpha <- subset(resulting_alpha, Description != "GH002.086.02.lib1.b66")
+nrow(resulting_alpha)
+```
+
+Input for linked plots
+```{r}
+df <- resulting_alpha[,c("Time","Intervention","Gender","subject","InvSimpson", "PD", "pair_group", "Group")]
+```
+
+
+```{r,message=FALSE,warning=FALSE,echo=FALSE}
+library(reshape2)
+library(ggplot2)
+library(microbiome)
+```
+
+InvSimpson
+```{r,message=FALSE,echo=FALSE}
+dat.all <- melt(df, id.vars='pair_group', measure.vars=c('InvSimpson'))
+dat.all_1 <- melt(df, id.vars='Time', measure.vars=c('InvSimpson'))
+dat.all2 <- melt(df, id.vars='Intervention', measure.vars=c('InvSimpson'))
+dat.all3 <- melt(df, id.vars='subject', measure.vars=c('InvSimpson'))
+dat.all4 <- melt(df, id.vars='Group', measure.vars=c('InvSimpson'))
+
+dat.all <- cbind(dat.all,dat.all_1[,1],dat.all2[,1],dat.all3[,1],dat.all4[,1]) # combine all dat
+dat.all <- dat.all[rowSums(is.na(dat.all)) < 1, ] # remove <1
+
+# make an order
+dat.all <- dat.all[ order(dat.all[,6], dat.all[,1],decreasing = TRUE), ]
+
+#rename the colomn
+colnames(dat.all) <- c("pair_group","variable","value","Time","Intervention","subject","Group")
+
+```
+
+
+```{r}
+p <- ggplot(dat.all, aes(Time, value),colour=black) 
+p <- p + geom_point(position = position_dodge(width=1))
+p <- p + geom_boxplot(aes(Time, value),alpha=.25, width=0.5)
+p <- p + ylab("InvSimpson")
+p <- p + geom_path(aes(group=subject))
+p <- p + theme_bw()
+p <- p + facet_wrap( ~ pair_group)
+p <- p + scale_x_discrete(limits=c("pre","post"))
+p <- p + theme(legend.position = "right")
+p <- p + xlab("")
+p1 <- p
+```
+
+PD
+```{r, echo=FALSE}
+dat.all <- melt(df, id.vars='pair_group', measure.vars=c('PD'))
+dat.all_1 <- melt(df, id.vars='Time', measure.vars=c('PD'))
+dat.all2 <- melt(df, id.vars='Intervention', measure.vars=c('PD'))
+dat.all3 <- melt(df, id.vars='subject', measure.vars=c('PD'))
+dat.all4 <- melt(df, id.vars='Group', measure.vars=c('PD'))
+
+dat.all <- cbind(dat.all,dat.all_1[,1],dat.all2[,1],dat.all3[,1],dat.all4[,1]) # combine all dat
+dat.all <- dat.all[rowSums(is.na(dat.all)) < 1, ] # remove <1
+
+# make an order
+dat.all <- dat.all[ order(dat.all[,6], dat.all[,1],decreasing = TRUE), ]
+
+#rename the colomn
+colnames(dat.all) <- c("pair_group","variable","value","Time","Intervention","subject","Group")
+```
+
+```{r}
+p2 <- ggplot(dat.all, aes(Time, value),colour=black) 
+p2 <- p2 + geom_point(position = position_dodge(width=1))
+p2 <- p2 + geom_boxplot(aes(Time, value),alpha=.25, width=0.5)
+p2 <- p2 + ylab("Phylogenetic diversity")
+p2 <- p2 + geom_path(aes(group=subject))
+p2 <- p2 + theme_bw()
+p2 <- p2 + facet_wrap( ~ pair_group)
+p2 <- p2 + scale_x_discrete(limits=c("pre","post"))
+p2 <- p2 + theme(legend.position = "right")
+p2 <- p2 + xlab("")
+```
+
+```{r}
+library(cowplot)
+fig<-plot_grid(p1, p2, labels=c("C", "D"), ncol = 2, nrow = 1)
+fig
+#ggsave("./figures/intervention_alpha diversity.pdf", height = 4.5, width = 11, useDingbats = FALSE)
+```
+

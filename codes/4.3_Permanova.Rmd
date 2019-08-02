@@ -1,0 +1,56 @@
+---
+title: "4.3 Permanova"
+author: "Ran An"
+date: "`r Sys.Date()`"
+output: bookdown::gitbook
+site: bookdown::bookdown_site
+---
+## Permanova
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+library(phyloseq) # also the basis of data object. Data analysis and visualisation
+library(vegan)
+```
+
+Baseline  data preparation
+```{r}
+ps1_baseline <- readRDS("./phyobjects/ps_t0.rds") #read in the baseline phyloseq object
+ps1.baseline.rel <- transform(ps1_baseline, "relative.abundance")
+```
+
+
+Run adonis-permanova-weighted
+Tests group wise similarity 
+```{r}
+metadf <- data.frame(sample_data(ps1.baseline.rel))
+
+unifrac.dist <- UniFrac(ps1.baseline.rel, 
+                        weighted = TRUE, 
+                        normalized = TRUE,  
+                        parallel = FALSE, 
+                        fast = TRUE)
+
+permanova <- adonis(unifrac.dist ~ Group, data = metadf) #tests whether composition among groups is similar or not
+permanova
+```
+Run adonis-permanova-unweighted
+Tests group wise similarity
+```{r}
+metadf <- data.frame(sample_data(ps1.baseline.rel))
+
+unifrac.dist <- UniFrac(ps1.baseline.rel, 
+                        weighted = FALSE, 
+                        normalized = TRUE,  
+                        parallel = FALSE, 
+                        fast = TRUE)
+
+permanova <- adonis(unifrac.dist ~ Group, data = metadf) #tests whether composition among groups is similar or not
+permanova
+```
+
+
+Checking the homogeneity condition
+```{r}
+ps.disper <- betadisper(unifrac.dist, metadf$Group)
+permutest(ps.disper, pairwise = TRUE)
+```
+
