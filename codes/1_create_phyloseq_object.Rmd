@@ -1,0 +1,103 @@
+---
+title: "Creat phyloseq object"
+author: "Ran An"
+date: "`r Sys.Date()`"
+output: bookdown::gitbook
+site: bookdown::bookdown_site
+---
+#Phyloseq object
+
+**Create Folders as following** 
+```{r, eval=FALSE}
+#Tables  
+dir.create("tables")
+# Figures 
+dir.create("figures")  
+# Phyloseq objects  
+dir.create("phyobjects")  
+#input files
+dir.create("input files")
+```
+
+**Load packages**  
+```{r, warning=FALSE, message=FALSE}
+library(microbiome)
+library(phyloseq) 
+library(microbiomeutilities) 
+library(RColorBrewer) 
+library(ggpubr) 
+library(DT) 
+library(data.table)
+library(dplyr) 
+```
+
+
+**Create the phyloseq object**
+```{r, warning=FALSE, message=FALSE}
+#load the biome and mapping file
+ps<- read_phyloseq(otu.file = "./input files/biom_GH002.biom", 
+                    taxonomy.file = NULL, 
+                    metadata.file = "./input files/mapping_GH002.csv", 
+                    type = "biom") 
+#load tree file
+library(ape)
+treefile_p1 <- read.tree("./input files/tree_GH002.tree")
+
+#merge the phyloseq object
+ps<-merge_phyloseq(ps,treefile_p1)
+```
+
+**Clean the taxonomy table**
+```{r}
+# We make a data table with information on the OTUs
+#datatable(tax_table(ps))
+tax_table(ps)[,colnames(tax_table(ps))] <- gsub(tax_table(ps)[,colnames(tax_table(ps))],pattern="[a-z]__",replacement="")
+tax_table(ps)[tax_table(ps)[,"Phylum"]== "","Phylum"] <- "Unidentified"
+datatable(tax_table(ps))#compare the new table with the old table
+```
+
+**Save the complete phyloseq object**
+```{r}
+saveRDS(ps, "./phyobjects/ps_GH002.rds")
+```
+
+
+**Subset the biological samples (i.e.remove MOCK communities)**  
+Mock communities are synthesised microbial community which were used to check the senquencing error.Save the phyloseq object after removing mocks - "ps_GH002_rm"
+```{r}
+library(phyloseq)
+ps_GH002_rm<-subset_samples(ps,group != "MOCK")
+ps_GH002_rm<-prune_taxa(taxa_sums(ps_GH002_rm) > 0, ps_GH002_rm)
+saveRDS(ps_GH002_rm, "./phyobjects/ps_GH002_rm.rds")
+ps_GH002_rm
+```
+
+Save the phyloseq object of mocks - "ps_GH002_mc"
+```{r}
+library(phyloseq)
+ps_GH002_mc<-subset_samples(ps,group == "MOCK")
+ps_GH002_mc<-prune_taxa(taxa_sums(ps_GH002_mc) > 0,ps_GH002_mc)
+saveRDS(ps_GH002_mc, "./phyobjects/ps_GH002_mc.rds")
+ps_GH002_mc
+```
+
+Save the phyloseq object before intervention - "ps_t0" 
+```{r}
+ps_t0<- subset_samples(ps, Time=="pre")
+ps_t0<-prune_taxa(taxa_sums(ps_t0) > 0,ps_t0)
+saveRDS(ps_t0, "./phyobjects/ps_t0.rds")
+ps_t0
+```
+
+Save the phyloseq object after intervention- "ps_t1"
+```{r}
+ps_t1<- subset_samples(ps, Time=="post")
+ps_t1<-prune_taxa(taxa_sums(ps_t1) > 0,ps_t1)
+saveRDS(ps_t1, "./phyobjects/ps_t1.rds")
+ps_t1
+```
+
+```{r}
+sessionInfo()
+```
+

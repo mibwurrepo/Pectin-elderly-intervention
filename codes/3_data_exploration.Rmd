@@ -1,0 +1,96 @@
+---
+title: "Data exploration"
+author: "Ran An"
+date: "`r Sys.Date()`"
+output: bookdown::gitbook
+site: bookdown::bookdown_site
+---
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+library(microbiome) # data analysis and visualisation
+library(phyloseq) # also the basis of data object. Data analysis and visualisation
+library(microbiomeutilities) # some utility tools 
+library(RColorBrewer) # nice color options
+library(ggpubr) # publication quality figures, based on ggplot2
+library(DT) # interactive tables in html and markdown
+library(data.table) # alternative to data.frame
+library(dplyr) # data handling  
+```
+
+##Data exploration
+
+**load pre-stored phyloseq object**
+```{r}
+#load pre-created phyloseq object
+ps_rm <- readRDS("./phyobjects/ps_GH002_rm.rds")
+# check Nr. OTU etc.
+print(ps_rm)
+```
+
+```{r,warning=FALSE, message=FALSE}
+#global check up
+library(microbiome)
+min(sample_sums(ps_rm))
+max(sample_sums(ps_rm))
+mean(sample_sums(ps_rm))
+#summarize_phyloseq(ps_rm)
+```
+
+Let us check for distribution of number of sequences retained after NG-tax approach.  
+```{r,warning=FALSE, message=FALSE}
+#reads distribution
+p_seqdepth<- plot_read_distribution(ps_rm, "Group", "density")
+print(p_seqdepth)
+```
+
+
+Moving on to distribution of taxa
+```{r}
+#plot the histogram of ASVs
+ps<-ps_rm
+library(data.table)
+ps0_df_taxa <- data.table(tax_table(ps), 
+                        ASVabundance = taxa_sums(ps), 
+                        ASV= taxa_names(ps))
+ps0_tax_plot <- ggplot(ps0_df_taxa, aes(ASVabundance)) + 
+  geom_histogram() + ggtitle("Histogram of ASVs (unique sequence) counts (NG-Tax)") + 
+  theme_bw() + scale_x_log10() + ylab("Frequency of ASVs") + xlab("Abundance (raw counts)") + scale_x_continuous(limits = c(0, 500))
+
+print(ps0_tax_plot)
+```
+
+
+**Check how different phyla are represented in the total data**
+```{r}
+taxasums = rowSums(otu_table(ps))
+  
+taxatable <- as.data.frame.matrix(tax_table(ps))
+
+tax_plot1 <- ggplot(taxatable, aes(x = taxasums, color = taxatable[, "Phylum"])) 
+tax_plot1 <- tax_plot1 + geom_line(size = 1.5, stat = "density") 
+tax_plot1 <- tax_plot1 + theme_bw() 
+tax_plot1 <- tax_plot1 + guides(color=guide_legend(title="Phylum", nrow = 8)) 
+tax_plot1 + scale_x_log10() + xlab("Log10 OTU Counts") 
+```
+
+
+Check out the phylum level (average abundance vs prevalence)
+```{r}
+p <- plot_taxa_prevalence(ps, "Phylum")
+p
+```
+
+Checking for potentially spurious OTUs/ASVs. Usually, we do not expect mitochondria and chloroplast as part of the human microbiome.  
+
+ASV-picking stratergy  
+```{r}
+ps1 <- subset_taxa(ps, Family != "chloroplast")
+
+print(ps1)
+
+# also check how many are lost 
+
+ntaxa(ps1)-ntaxa(ps)
+```
+There is no mitochrondria and chloroplast in our dataset
+

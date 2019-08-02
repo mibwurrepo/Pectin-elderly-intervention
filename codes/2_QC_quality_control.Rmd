@@ -1,0 +1,67 @@
+---
+title: "QC_quality_control"
+author: "Ran An"
+date: "`r Sys.Date()`"
+output: bookdown::gitbook
+site: bookdown::bookdown_site
+---
+
+## Quality Control
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+library(microbiome) # data analysis and visualisation
+library(phyloseq) # also the basis of data object. Data analysis and visualisation
+library(microbiomeutilities) # some utility tools 
+library(RColorBrewer) # nice color options
+library(ggpubr) # publication quality figures, based on ggplot2
+library(DT) # interactive tables in html and markdown
+library(data.table) # alternative to data.frame
+library(dplyr) # data handling  
+```
+
+**Biological repilcates**
+```{r, warning=FALSE, message=FALSE}
+ps <- readRDS("./phyobjects/ps_GH002.rds")
+bio<-subset_samples(ps, typeofsample == "biological_rep")
+bio<-prune_taxa(taxa_sums(bio) > 0,bio)
+saveRDS(bio, "./phyobjects/bio_rep.rds")
+min(sample_sums(bio))
+max(sample_sums(bio))
+mean(sample_sums(bio))
+#summarize_phyloseq(bio)
+```
+
+```{r}
+L6 <-read.csv("./input files/dataset_3375_L6.CSV",check.names=FALSE, row.names = 1, header = TRUE)
+bio <- L6[ , which(names(L6) %in% c("GH002.012.02.lib1.b47", "GH002.012.02.lib1.b69", "GH002.012.02.lib2.b69", "GH002.012.02.lib3.b69",  "GH002.064.02.lib1.b49",  "GH002.064.02.lib1.b70", "GH002.064.02.lib2.b42", "GH002.064.02.lib2.b70", "GH002.064.02.lib3.b70", "GH002.086.02.lib1.b66", "GH002.086.02.lib2.b66"))] #get biological replicate samples
+
+cor(bio$GH002.012.02.lib1.b47, bio$GH002.012.02.lib1.b69)
+cor(bio$GH002.012.02.lib1.b47, bio$GH002.012.02.lib2.b69)
+cor(bio$GH002.012.02.lib1.b47, bio$GH002.012.02.lib3.b69)
+
+cor(bio$GH002.064.02.lib1.b49, bio$GH002.064.02.lib2.b42)
+cor(bio$GH002.064.02.lib1.b49, bio$GH002.064.02.lib1.b70)
+cor(bio$GH002.064.02.lib1.b49, bio$GH002.064.02.lib2.b70)
+cor(bio$GH002.064.02.lib1.b49, bio$GH002.064.02.lib3.b70)
+
+cor(bio$GH002.086.02.lib1.b66, bio$GH002.086.02.lib2.b66)
+```
+
+```{r, warning=FALSE, message=FALSE}
+mocks <-read.csv("./input files/mocks.csv",check.names=FALSE, row.names = 1)
+```
+
+Pearson correlation coefficient
+```{r, warning=FALSE, message=FALSE}
+cor(mocks$Mc.3.theory, mocks$MOCK3.lib1)
+cor(mocks$Mc.3.theory, mocks$MOCK3.lib2)
+cor(mocks$Mc.3.theory, mocks$MOCK3.lib3)
+
+
+cor(mocks$Mc.4.theory, mocks$MOCK4.lib1)
+cor(mocks$Mc.4.theory, mocks$MOCK4.lib2)
+cor(mocks$Mc.4.theory, mocks$MOCK4.lib3)
+```
+
+
+
+

@@ -1,0 +1,62 @@
+---
+title: "1.1_sample_numbers_per_group"
+author: "Ran An"
+date: "`r Sys.Date()`"
+output: bookdown::gitbook
+site: bookdown::bookdown_site
+---
+
+## Sample numbers per group
+```{r, warning=FALSE, message=FALSE,echo=FALSE}
+library(microbiome) # data analysis and visualisation
+library(phyloseq) # also the basis of data object. Data analysis and visualisation
+library(microbiomeutilities) # some utility tools 
+library(RColorBrewer) # nice color options
+library(ggpubr) # publication quality figures, based on ggplot2
+library(DT) # interactive tables in html and markdown
+library(data.table) # alternative to data.frame
+library(dplyr) # data handling  
+library(vegan)
+```
+
+Read in overall data
+```{r}
+ps1 <- readRDS("./phyobjects/ps_GH002_rm.rds") #read in the phyloseq object without mocks
+```
+
+Number of young people at t0
+```{r}
+ps1_young <- subset_samples(ps1, Group=="Young")
+ps1_young_t0 <- subset_samples(ps1_young, Time=="pre")
+ps1_young_to <- prune_taxa(taxa_sums(ps1_young_t0) > 0,ps1_young_t0)
+ps1_young_t0
+rownames(sample_data(ps1_young_t0))
+```
+
+Number of young people at t0, taking pectin/placebo
+```{r}
+ps1_young <- subset_samples(ps1, Group=="Young")
+ps1_young_t0 <- subset_samples(ps1_young, Time=="pre")
+ps1_young_t0_pectin <- subset_samples(ps1_young_t0, Intervention=="pectin")
+
+ps1_young_t0_pectin <- prune_taxa(taxa_sums(ps1_young_t0_pectin) > 0,ps1_young_t0_pectin)
+ps1_young_t0_pectin
+
+rownames(sample_data(ps1_young_t0_pectin))
+#young pectin n=25
+#young placebo n=26
+```
+
+Number of elderly people at t0, taking pectin/placebo
+```{r}
+ps1_elderly <- subset_samples(ps1, Group=="Elderly")
+ps1_elderly_t0 <- subset_samples(ps1_elderly, Time=="pre")
+ps1_elderly_t0_pectin <- subset_samples(ps1_elderly_t0, Intervention=="pectin")
+
+ps1_elderly_t0_pectin <- prune_taxa(taxa_sums(ps1_elderly_t0_pectin) > 0,ps1_elderly_t0_pectin)
+ps1_elderly_t0_pectin
+
+rownames(sample_data(ps1_elderly_t0_pectin))
+#elderly pectin n=24
+#elderly placebo n=24
+```
