@@ -1,0 +1,80 @@
+---
+title: "4_young_vs_elderly"
+author: "Ran An"
+date: "`r Sys.Date()`"
+output: bookdown::gitbook
+site: bookdown::bookdown_site
+---
+
+# Baseline: Young vs Elderly
+## Alpha diversity
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+library(microbiome) # data analysis and visualisation
+library(phyloseq) # also the basis of data object. Data analysis and visualisation
+library(microbiomeutilities) # some utility tools 
+library(RColorBrewer) # nice color options
+library(ggpubr) # publication quality figures, based on ggplot2
+library(DT) # interactive tables in html and markdown
+library(data.table) # alternative to data.frame
+library(dplyr) # data handling 
+library(cowplot)
+```
+
+
+**alpha diversity calculation**
+```{r, warning=FALSE, message=FALSE}
+#load pre-created phyloseq object
+ps1_nomock <- readRDS("./phyobjects/ps_GH002_rm.rds")
+
+alpha.diversity <- estimate_richness(ps1_nomock,measures = c("Observed","Shannon","Fisher", "InvSimpson","Chao1"))
+
+Shannon <- alpha.diversity$Shannon 
+Observed <- alpha.diversity$Observed # richness
+Pielou <- Shannon/log(Observed) # calculate eveness
+alpha.diversity$pielou <- Pielou # write eveness into dataframe
+
+
+#calculate phylogenetic diversity
+library(picante)
+otu_table_ps1 <- as.data.frame(ps1_nomock@otu_table)
+treefile_p1 <-ps1_nomock@phy_tree
+df.pd <- pd(t(otu_table_ps1), treefile_p1,include.root=F) 
+alpha.diversity$PD <- df.pd$PD # write PD into dataframe
+
+data <- cbind(sample_data(ps1_nomock), alpha.diversity) #combine alpha diveristy and metadata
+#write.csv(data,"./tables/alpha_diversity.csv") #write a table with alpha diversity indices
+```
+
+
+Read in the generated table
+```{r}
+data <-read.csv("./tables/alpha_diversity.csv",check.names=FALSE, row.names = 1,header = TRUE)
+baseline <- subset(data, Time=="pre")
+```
+
+
+Here we are only using baseline data to characterize the differences between young adutls and elderly.
+```{r}
+#Inverse Simpson
+p3 <- ggplot(baseline, aes(Group, InvSimpson,shape=Group)) + geom_boxplot(aes(),outlier.colour = NA) + theme(axis.text.x = element_text(size=14, angle = 90))
+p3 <- p3 + stat_compare_means(label.x = 1.2, label.y= 100)  # add p value to graph
+p3 <- p3 + theme_classic()
+p3 <- p3 + theme(legend.position = "bottom")
+p3 <- p3 + labs(y ="InvSimpson",x="")
+p3 <- p3 + theme(legend.position = "none")
+p3 <- p3 + geom_jitter(position=position_jitter(0.2))+ scale_shape_manual(values=c(16,2)) # add dots
+
+#PD
+p4 <- ggplot(baseline, aes(x=Group, y=PD, shape=Group)) + geom_boxplot(aes(),outlier.colour = NA) + theme(axis.text.x = element_text(size=14, angle = 90))
+p4 <- p4 + stat_compare_means(label.x = 1.2, label.y= 40)  # add p value to graph
+p4 <- p4 + theme_classic()
+p4 <- p4 + theme(legend.position = "bottom")
+p4 <- p4 + labs(y ="Phylogenetic diversity",x="")
+p4 <- p4 + theme(legend.position = "none")
+p4 <- p4 + geom_jitter(position=position_jitter(0.2))+ scale_shape_manual(values=c(16,2)) # add dots
+
+
+InvSimpson_PD <- plot_grid(p3, p4, labels=c("A", "B"), ncol = 2, nrow = 1)
+InvSimpson_PD # Figure S2
+#ggsave("./figures/InvSimpson_PD.pdf", height = 6, width = 8, useDingbats = FALSE)
+```
