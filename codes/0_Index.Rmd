@@ -24,10 +24,7 @@ site: bookdown::bookdown_site
 ```{r child = '4.2_young_vs_elderly_beta_diversity.Rmd'}
 ```
 
-```{r child = '4.3_Permanova.Rmd'}
-```
-
-```{r child = '4.4.significantly.different.taxa.Rmd'}
+```{r child = '4.3.significantly.different.taxa.Rmd'}
 ```
 
 ```{r child = '5.1_intervention_alpha_div.Rmd'}
