@@ -37,7 +37,7 @@ library(dplyr)
 #load the biome and mapping file
 ps<- read_phyloseq(otu.file = "./input files/biom_GH002.biom", 
                     taxonomy.file = NULL, 
-                    metadata.file = "./input files/mapping_GH002.csv", 
+                    metadata.file = "./input files/mapping_GH002_git.csv", 
                     type = "biom") 
 #load tree file
 library(ape)
